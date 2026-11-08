@@ -1,0 +1,16 @@
+# secrets
+.env
+
+# node
+node_modules/
+dist/
+*.log
+
+# os / editor
+.DS_Store
+.vscode/
+.idea/
+
+# runtime data
+backups/
+recordings/
