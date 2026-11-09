@@ -1,0 +1,7 @@
+; only the transport is static, endpoints/auths/aors live in the database
+[transport-udp]
+type=transport
+protocol=udp
+bind=0.0.0.0:5060
+external_media_address=${PBX_EXTERNAL_IP}
+external_signaling_address=${PBX_EXTERNAL_IP}

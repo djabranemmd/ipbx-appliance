@@ -9,9 +9,8 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - db_data:/var/lib/postgresql/data
-      - ./database/init:/docker-entrypoint-initdb.d:ro
-    # localhost only: asterisk will run in host network mode and reach it here,
-    # but the database is not exposed to the LAN
+    # published on localhost only (psql, migrations, backend in dev).
+    # asterisk reaches the database through the compose network.
     ports:
       - "127.0.0.1:5432:5432"
     healthcheck:
@@ -19,6 +18,30 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  asterisk:
+    build: ./asterisk
+    container_name: pbx-asterisk
+    restart: unless-stopped
+    init: true
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      PBX_EXTERNAL_IP: ${PBX_EXTERNAL_IP:?set PBX_EXTERNAL_IP in .env}
+    ports:
+      - "5060:5060/udp"
+      - "10000-10100:10000-10100/udp"
+    healthcheck:
+      test: ["CMD-SHELL", "asterisk -rx 'core waitfullybooted'"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
 
 volumes:
   db_data:
