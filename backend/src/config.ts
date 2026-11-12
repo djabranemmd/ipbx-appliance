@@ -22,6 +22,8 @@ export const config = {
   corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
   jwtSecret,
   jwtExpiresIn: '8h' as const,
+  // address the phones must register to, shown with the sip credentials
+  pbxHost: process.env.PBX_EXTERNAL_IP ?? null,
   db: {
     host: process.env.DB_HOST ?? '127.0.0.1',
     port: Number(process.env.DB_PORT ?? 5432),

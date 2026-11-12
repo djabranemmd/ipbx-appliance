@@ -32,6 +32,12 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     return;
   }
 
+  // exclusion constraint: two numbering ranges overlap
+  if (hasProp(err, 'code') && err.code === '23P01') {
+    res.status(409).json({ error: 'This range overlaps an existing range' });
+    return;
+  }
+
   console.error(err);
   res.status(500).json({ error: 'Internal server error' });
 }
