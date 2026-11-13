@@ -1,0 +1,18 @@
+; AMI: lets the api read the live state of the pbx and send a few actions.
+; the port is published on 127.0.0.1 only, the acl below is a second barrier.
+[general]
+enabled = yes
+port = 5038
+bindaddr = 0.0.0.0
+displayconnects = no
+webenabled = no
+
+[${AMI_USER}]
+secret = ${AMI_PASSWORD}
+deny = 0.0.0.0/0.0.0.0
+permit = 127.0.0.1/255.255.255.255
+permit = 10.0.0.0/255.0.0.0
+permit = 172.16.0.0/255.240.0.0
+permit = 192.168.0.0/255.255.0.0
+read = system,call,reporting
+write = system,call,reporting,command

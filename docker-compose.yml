@@ -33,9 +33,13 @@ services:
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
       PBX_EXTERNAL_IP: ${PBX_EXTERNAL_IP:?set PBX_EXTERNAL_IP in .env}
+      AMI_USER: ${AMI_USER:?set AMI_USER in .env}
+      AMI_PASSWORD: ${AMI_PASSWORD:?set AMI_PASSWORD in .env}
     ports:
       - "5060:5060/udp"
       - "10000-10100:10000-10100/udp"
+      # manager interface, reachable from this machine only
+      - "127.0.0.1:5038:5038"
     healthcheck:
       test: ["CMD-SHELL", "asterisk -rx 'core waitfullybooted'"]
       interval: 10s

@@ -24,6 +24,13 @@ export const config = {
   jwtExpiresIn: '8h' as const,
   // address the phones must register to, shown with the sip credentials
   pbxHost: process.env.PBX_EXTERNAL_IP ?? null,
+  // asterisk manager interface, used to read the live state of the pbx
+  ami: {
+    host: process.env.AMI_HOST ?? '127.0.0.1',
+    port: Number(process.env.AMI_PORT ?? 5038),
+    username: required('AMI_USER'),
+    secret: required('AMI_PASSWORD'),
+  },
   db: {
     host: process.env.DB_HOST ?? '127.0.0.1',
     port: Number(process.env.DB_PORT ?? 5432),
