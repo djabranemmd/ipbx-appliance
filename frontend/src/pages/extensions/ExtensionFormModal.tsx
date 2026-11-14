@@ -16,6 +16,31 @@ interface Props {
   onCreated: (extension: ExtensionItem) => void;
 }
 
+function ForwardSelect({
+  id,
+  label,
+  value,
+  onChange,
+  targets,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  targets: ExtensionItem[];
+}) {
+  return (
+    <SelectField id={id} label={label} value={value} onChange={(e) => onChange(e.target.value)}>
+      <option value="">No forwarding</option>
+      {targets.map((target) => (
+        <option key={target.id} value={target.number}>
+          {target.number} {target.displayName}
+        </option>
+      ))}
+    </SelectField>
+  );
+}
+
 // creates an extension, or edits one when "extension" is given
 export default function ExtensionFormModal({ extension, onClose, onCreated }: Props) {
   const queryClient = useQueryClient();
@@ -29,6 +54,18 @@ export default function ExtensionFormModal({ extension, onClose, onCreated }: Pr
   const [userId, setUserId] = useState(extension?.user ? String(extension.user.id) : '');
   const [callPermission, setCallPermission] = useState<CallPermission>(extension?.callPermission ?? 'internal');
   const [enabled, setEnabled] = useState(extension?.enabled ?? true);
+  // forwarding is set when editing: '' means "no forwarding"
+  const [forwardAlways, setForwardAlways] = useState(extension?.forwarding.always ?? '');
+  const [forwardBusy, setForwardBusy] = useState(extension?.forwarding.busy ?? '');
+  const [forwardNoAnswer, setForwardNoAnswer] = useState(extension?.forwarding.noAnswer ?? '');
+  const [ringTimeout, setRingTimeout] = useState(String(extension?.forwarding.ringTimeout ?? 20));
+
+  // the other extensions a call can be forwarded to
+  const allExtensions = useQuery({
+    queryKey: ['extensions'],
+    queryFn: () => api.get<{ items: ExtensionItem[] }>('/extensions'),
+  });
+  const targets = (allExtensions.data?.items ?? []).filter((item) => item.number !== extension?.number);
 
   // a user can hold one extension only: the ones already taken are not offered
   const freeUsers = (users.data?.items ?? []).filter(
@@ -46,6 +83,10 @@ export default function ExtensionFormModal({ extension, onClose, onCreated }: Pr
           userId: owner,
           callPermission,
           enabled,
+          forwardAlways: forwardAlways || null,
+          forwardBusy: forwardBusy || null,
+          forwardNoAnswer: forwardNoAnswer || null,
+          ringTimeout: Number(ringTimeout),
         });
       }
       // without a name the server uses the name of the user, or "Extension <number>"
@@ -115,6 +156,32 @@ export default function ExtensionFormModal({ extension, onClose, onCreated }: Pr
           <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
           Enabled (a disabled extension cannot register or call)
         </label>
+
+        {extension && (
+          <fieldset className="space-y-3 rounded-md border border-slate-200 p-3">
+            <legend className="px-1 text-sm font-medium text-slate-700">Call forwarding</legend>
+            <ForwardSelect id="ext-fwd-always" label="Forward all calls to" value={forwardAlways} onChange={setForwardAlways} targets={targets} />
+            <ForwardSelect id="ext-fwd-busy" label="If busy, forward to" value={forwardBusy} onChange={setForwardBusy} targets={targets} />
+            <ForwardSelect
+              id="ext-fwd-noanswer"
+              label="If no answer, forward to"
+              value={forwardNoAnswer}
+              onChange={setForwardNoAnswer}
+              targets={targets}
+            />
+            <Field
+              id="ext-ring-timeout"
+              label="Ring time before 'no answer' (seconds)"
+              type="number"
+              min={5}
+              max={60}
+              required
+              value={ringTimeout}
+              onChange={(e) => setRingTimeout(e.target.value)}
+            />
+            <p className="text-xs text-slate-500">Applies from the next call. A phone that is not registered counts as "no answer".</p>
+          </fieldset>
+        )}
 
         <ErrorBanner message={save.error ? errorMessage(save.error) : null} />
         <div className="flex justify-end gap-2">

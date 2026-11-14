@@ -8,8 +8,9 @@ import PageHeader from '../../components/PageHeader';
 import Spinner from '../../components/Spinner';
 import { api, errorMessage } from '../../lib/api';
 import { refreshPbxData } from '../../lib/queries';
-import type { RangeItem } from '../../lib/types';
+import type { RangeItem, RestrictionItem } from '../../lib/types';
 import RangeFormModal from './RangeFormModal';
+import RestrictionFormModal from './RestrictionFormModal';
 
 export default function RangesPage() {
   const { hasRole } = useAuth();
@@ -21,9 +22,16 @@ export default function RangesPage() {
     queryFn: () => api.get<{ items: RangeItem[] }>('/ranges'),
   });
 
+  const restrictions = useQuery({
+    queryKey: ['restrictions'],
+    queryFn: () => api.get<{ items: RestrictionItem[] }>('/restrictions'),
+  });
+
   // null = closed, 'new' = creation, a range = edition
   const [editing, setEditing] = useState<RangeItem | 'new' | null>(null);
   const [deleting, setDeleting] = useState<RangeItem | null>(null);
+  const [addingRestriction, setAddingRestriction] = useState(false);
+  const [removingRestriction, setRemovingRestriction] = useState<RestrictionItem | null>(null);
 
   const remove = useMutation({
     mutationFn: (range: RangeItem) => api.delete(`/ranges/${range.id}`),
@@ -32,6 +40,17 @@ export default function RangesPage() {
       setDeleting(null);
     },
   });
+
+  const removeRestriction = useMutation({
+    mutationFn: (restriction: RestrictionItem) => api.delete(`/restrictions/${restriction.id}`),
+    onSuccess: async () => {
+      await refreshPbxData(queryClient);
+      setRemovingRestriction(null);
+    },
+  });
+
+  const rangeLabel = (range: { name: string; rangeStart: number; rangeEnd: number }) =>
+    `${range.name} (${range.rangeStart}-${range.rangeEnd})`;
 
   return (
     <div className="space-y-6">
@@ -86,7 +105,73 @@ export default function RangesPage() {
         </section>
       )}
 
+      <PageHeader
+        title="Call restrictions"
+        hint="Forbid the extensions of one range to call the extensions of another one."
+        action={
+          canWrite && (
+            <Button onClick={() => setAddingRestriction(true)} disabled={!ranges.data || ranges.data.items.length === 0}>
+              New restriction
+            </Button>
+          )
+        }
+      />
+
+      <ErrorBanner message={restrictions.error ? errorMessage(restrictions.error) : null} />
+
+      {restrictions.data && (
+        <section className="rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
+          {restrictions.data.items.length === 0 ? (
+            <p className="px-4 py-6 text-sm text-slate-500">No restriction: every extension can call every other one.</p>
+          ) : (
+            <table className="w-full text-left text-sm">
+              <thead className="text-slate-500">
+                <tr>
+                  <th className="px-4 py-2 font-medium">Extensions of</th>
+                  <th className="px-4 py-2 font-medium">cannot call</th>
+                  {canWrite && <th className="px-4 py-2" />}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {restrictions.data.items.map((restriction) => (
+                  <tr key={restriction.id}>
+                    <td className="px-4 py-2 font-medium text-slate-900">{rangeLabel(restriction.from)}</td>
+                    <td className="px-4 py-2">{rangeLabel(restriction.to)}</td>
+                    {canWrite && (
+                      <td className="px-4 py-2 text-right">
+                        <Button small variant="secondary" onClick={() => setRemovingRestriction(restriction)}>
+                          Remove
+                        </Button>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </section>
+      )}
+
       {editing && <RangeFormModal range={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />}
+
+      {addingRestriction && ranges.data && (
+        <RestrictionFormModal ranges={ranges.data.items} onClose={() => setAddingRestriction(false)} />
+      )}
+
+      {removingRestriction && (
+        <ConfirmModal
+          title="Remove restriction"
+          message={`Allow the extensions of ${removingRestriction.from.name} to call the extensions of ${removingRestriction.to.name} again?`}
+          confirmLabel="Remove"
+          busy={removeRestriction.isPending}
+          error={removeRestriction.error ? errorMessage(removeRestriction.error) : null}
+          onConfirm={() => removeRestriction.mutate(removingRestriction)}
+          onCancel={() => {
+            removeRestriction.reset();
+            setRemovingRestriction(null);
+          }}
+        />
+      )}
 
       {deleting && (
         <ConfirmModal

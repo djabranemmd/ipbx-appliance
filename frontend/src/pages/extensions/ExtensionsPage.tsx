@@ -13,6 +13,15 @@ import type { ExtensionItem } from '../../lib/types';
 import ExtensionFormModal from './ExtensionFormModal';
 import PhoneSetupModal from './PhoneSetupModal';
 
+// "all calls to 103 · busy to 104", empty when nothing is forwarded
+function forwardingSummary({ forwarding }: ExtensionItem): string {
+  const parts = [];
+  if (forwarding.always) parts.push(`all calls to ${forwarding.always}`);
+  if (forwarding.busy) parts.push(`busy to ${forwarding.busy}`);
+  if (forwarding.noAnswer) parts.push(`no answer (${forwarding.ringTimeout} s) to ${forwarding.noAnswer}`);
+  return parts.join(' · ');
+}
+
 function ExtensionStatus({ extension }: { extension: ExtensionItem }) {
   if (!extension.enabled) return <Badge tone="slate">Disabled</Badge>;
   return extension.registration.registered ? <Badge tone="green">Registered</Badge> : <Badge tone="amber">Not registered</Badge>;
@@ -97,7 +106,12 @@ export default function ExtensionsPage() {
                   {visible.map((extension) => (
                     <tr key={extension.id}>
                       <td className="px-4 py-2 font-medium text-slate-900">{extension.number}</td>
-                      <td className="px-4 py-2">{extension.displayName}</td>
+                      <td className="px-4 py-2">
+                        {extension.displayName}
+                        {forwardingSummary(extension) && (
+                          <div className="text-xs text-slate-500">Forwards {forwardingSummary(extension)}</div>
+                        )}
+                      </td>
                       <td className="px-4 py-2 text-slate-500">
                         {extension.user ? `${extension.user.firstName} ${extension.user.lastName}` : '—'}
                       </td>

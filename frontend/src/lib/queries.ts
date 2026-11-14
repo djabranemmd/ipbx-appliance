@@ -4,6 +4,6 @@ import type { QueryClient } from '@tanstack/react-query';
 // dashboard), so after any change they are all refreshed
 export function refreshPbxData(queryClient: QueryClient) {
   return Promise.all(
-    ['extensions', 'users', 'ranges', 'pbx'].map((key) => queryClient.invalidateQueries({ queryKey: [key] })),
+    ['extensions', 'users', 'ranges', 'restrictions', 'pbx'].map((key) => queryClient.invalidateQueries({ queryKey: [key] })),
   );
 }

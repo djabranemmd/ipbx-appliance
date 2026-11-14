@@ -72,6 +72,12 @@ export interface ExtensionItem {
   enabled: boolean;
   callPermission: CallPermission;
   user: { id: number; firstName: string; lastName: string } | null;
+  forwarding: {
+    always: string | null;
+    busy: string | null;
+    noAnswer: string | null;
+    ringTimeout: number;
+  };
   registration: {
     registered: boolean;
     contactUri: string | null;
@@ -105,4 +111,18 @@ export interface PhoneCredentials {
   server: string | null;
   port: number;
   transport: string;
+}
+
+export interface RangeRef {
+  id: number;
+  name: string;
+  rangeStart: number;
+  rangeEnd: number;
+}
+
+// the extensions of the "from" range cannot call the extensions of the "to" range
+export interface RestrictionItem {
+  id: number;
+  from: RangeRef;
+  to: RangeRef;
 }
