@@ -2,7 +2,12 @@ import { NavLink, Outlet } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 
 // one entry per page of the interface, new pages are added here
-const NAV = [{ to: '/', label: 'Dashboard', end: true }];
+const NAV = [
+  { to: '/', label: 'Dashboard', end: true },
+  { to: '/extensions', label: 'Extensions', end: false },
+  { to: '/users', label: 'Users', end: false },
+  { to: '/ranges', label: 'Numbering plan', end: false },
+];
 
 export default function Layout() {
   const { admin, logout } = useAuth();

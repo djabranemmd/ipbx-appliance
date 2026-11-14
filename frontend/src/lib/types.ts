@@ -62,3 +62,47 @@ export interface Call {
 export interface PbxChannels {
   calls: Call[];
 }
+
+export type CallPermission = 'internal' | 'external';
+
+export interface ExtensionItem {
+  id: number;
+  number: string;
+  displayName: string;
+  enabled: boolean;
+  callPermission: CallPermission;
+  user: { id: number; firstName: string; lastName: string } | null;
+  registration: {
+    registered: boolean;
+    contactUri: string | null;
+    userAgent: string | null;
+    expiresAt: string | null;
+  };
+}
+
+export interface UserItem {
+  id: number;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  createdAt: string;
+  extensionId: number | null;
+  extensionNumber: string | null;
+}
+
+export interface RangeItem {
+  id: number;
+  name: string;
+  rangeStart: number;
+  rangeEnd: number;
+  extensionCount: number;
+}
+
+// what a phone needs to register on the pbx
+export interface PhoneCredentials {
+  username: string;
+  password: string;
+  server: string | null;
+  port: number;
+  transport: string;
+}
